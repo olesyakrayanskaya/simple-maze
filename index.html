@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="./styles.css" />
+    <title>Document</title>
+  </head>
+  <body>
+    <div class="container">
+      <div class="maze">
+        <div class="maze__header">
+          <button class="maze__btn">Сложный лабиринт</button>
+          <button class="maze__btn">Простой лабиринт</button>
+        </div>
+        <div class="maze__main">
+          <canvas class="maze__field" id="canvas"></canvas>
+          <img class="maze__img" src="./images/easy.svg" alt="" id="maze" />
+          <img
+            src="./images/icon.png"
+            alt="hero-icon"
+            class="maze__hero"
+            id="hero"
+          />
+        </div>
+      </div>
+    </div>
+    <script src="./index.js"></script>
+  </body>
+</html>
