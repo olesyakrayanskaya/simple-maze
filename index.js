@@ -1,141 +1,108 @@
-'use strict'
+'use strict';
+
 window.onload = function () {
-    let canvas = document.getElementById('canvas');
-    let context = canvas.getContext('2d');
+    const canvas = document.getElementById('canvas');
+    const mazeImg = document.getElementById('maze');
+    const heroImg = document.getElementById('hero');
 
-    let mazeImg = document.getElementById('maze');
-    let heroImg = document.getElementById('hero');
+    if (!canvas || !mazeImg || !heroImg) {
+        console.error('Один из элементов не найден!');
+        return;
+    }
 
-    // обработка нажатия кнопок
-    window.onkeydown = processKey;
+    const context = canvas.getContext('2d', { willReadFrequently: true });
 
-    // начальная позиция
-    let x = 0;
+    const config = {
+        heroSize: 15,
+        heroColor: 'rgb(254,244,207)',
+        wallColors: [
+            { r: 0, g: 0, b: 0 },
+            { r: 169, g: 169, b: 169 }
+        ],
+        finishLine: canvas.height - 17
+    };
+
+    let x = 66;
     let y = 0;
-
-    // смещение
     let dx = 0;
     let dy = 0;
 
-    let timer;
+    drawMaze(x, y);
 
-    // отрисовать фон лабиринта
-    drawMaze(268, 5);
-
-    // отрисовка фона
-    function drawMaze(startingX, startingY) {
+    function drawMaze(startX, startY) {
         canvas.width = mazeImg.width;
         canvas.height = mazeImg.height;
-
-        // Рисуем лабиринт
         context.drawImage(mazeImg, 0, 0);
-
-        // Рисуем значок
-        x = startingX;
-        y = startingY;
-        context.drawImage(heroImg, x, y);
-        context.stroke();
-
-        // Рисуем следующий кадр
+        x = startX;
+        y = startY;
+        drawHero();
         window.requestAnimationFrame(drawFrame);
     }
 
-    // Обработка нажатия кнопок
+    function drawHero() {
+        context.drawImage(heroImg, x, y, config.heroSize, config.heroSize);
+    }
+
     function processKey(e) {
         e.preventDefault();
-
-        // Если значок находится в движении, 
-        // останавливаем его
+        const keyActions = {
+            37: () => (dx = -1, dy = 0),
+            38: () => (dx = 0, dy = -1),
+            39: () => (dx = 1, dy = 0),
+            40: () => (dx = 0, dy = 1)
+        };
         dx = 0;
         dy = 0;
-
-        // Если нажата стрелка вверх, 
-        // начинаем двигаться вверх
-        if (e.keyCode == 38) {
-            dy = -1;
-        }
-
-        // Если нажата стрелка вниз, 
-        // начинаем двигаться вниз
-        if (e.keyCode == 40) {
-            dy = 1;
-        }
-
-        // Если нажата стрелка влево, 
-        // начинаем двигаться влево
-        if (e.keyCode == 37) {
-            dx = -1;
-        }
-
-        // Если нажата стрелка вправо, 
-        // начинаем двигаться вправо
-        if (e.keyCode == 39) {
-            dx = 1;
+        if (keyActions[e.keyCode]) {
+            keyActions[e.keyCode]();
         }
     }
 
-    // Отрисовка кадра
-    function drawFrame() {
-        // Обновляем кадр только если значок движется
-        if (dx != 0 || dy != 0) {
-            //Закрашиваем перемещение значка желтым цветом
-            context.beginPath();
-            context.fillStyle = 'rgb(254,244,207)';
-            context.rect(x, y, 15, 15);
-            context.fill();
+    window.onkeydown = processKey;
 
-            // Обновляем координаты значка, создавая перемещение
+    function drawFrame() {
+        if (dx !== 0 || dy !== 0) {
+            context.fillStyle = config.heroColor;
+            context.fillRect(x, y, config.heroSize, config.heroSize);
             x += dx;
             y += dy;
-
-            // Проверка столкновения со стенками лабиринта
             if (checkForCollision()) {
                 x -= dx;
                 y -= dy;
                 dx = 0;
                 dy = 0;
             }
-
-            // Перерисовываем значок
-            context.drawImage(heroImg, x, y);
-
-            // Проверяем дошел ли пользователь до финиша
-            if (y > (canvas.height - 17)) {
+            drawHero();
+            if (y > config.finishLine) {
                 alert('Ты победил!');
                 return;
             }
         }
-
-        // Рисуем следующий кадр
         window.requestAnimationFrame(drawFrame);
     }
 
     function checkForCollision() {
-        // Перебираем все пиксели лабиринта и инвертируем их цвет
-        let imgData = context.getImageData(x - 1, y - 1, 15 + 2, 15 + 2);
-        let pixels = imgData.data;
-
-        // Получаем данные для одного пикселя
-        for (let i = 0; n = pixels.length, i < n; i += 4) {
-            let red = pixels[i];
-            let green = pixels[i + 1];
-            let blue = pixels[i + 2];
-            let alpha = pixels[i + 3];
-
-            // Смотрим на наличие черного цвета стены, 
-            // что указывает на столкновение
-            if (red == 0 && green == 0 && blue == 0) {
-                return true;
-            }
-
-            // Смотрим на наличие серого цвета краев, 
-            // что указывает на столкновение
-            if (red == 169 && green == 169 && blue == 169) {
-                return true;
+        const startX = Math.max(0, x - 1);
+        const startY = Math.max(0, y - 1);
+        const endX = Math.min(canvas.width, x + config.heroSize + 2);
+        const endY = Math.min(canvas.height, y + config.heroSize + 2);
+        const width = endX - startX;
+        const height = endY - startY;
+        if (width <= 0 || height <= 0) {
+            return false;
+        }
+        const imgData = context.getImageData(startX, startY, width, height);
+        const pixels = imgData.data;
+        for (let i = 0; i < pixels.length; i += 4) {
+            const red = pixels[i];
+            const green = pixels[i + 1];
+            const blue = pixels[i + 2];
+            for (const color of config.wallColors) {
+                if (red === color.r && green === color.g && blue === color.b) {
+                    return true;
+                }
             }
         }
-
-        // Столкновения не было
         return false;
     }
-}
+};

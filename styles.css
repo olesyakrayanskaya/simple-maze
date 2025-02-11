@@ -1,3 +1,7 @@
+.maze__main {
+    margin-top: 60px;
+}
+
 .maze__hero {
     display: none;
 }
