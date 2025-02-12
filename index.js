@@ -29,20 +29,22 @@ function startGame(canvas, mazeImg, heroImg) {
     const context = canvas.getContext('2d', { willReadFrequently: true });
 
     const config = {
-        heroSize: 12,
+        heroSize: 8,
         heroColor: 'rgb(254,244,207)',
         wallColors: [
             { r: 0, g: 0, b: 0 },
         ],
-        finishLine: canvas.height
+        frameDelay: 5
     };
 
-    let x = 66;
-    let y = 3;
+    let x = 0;
+    let y = 0;
     let dx = 0;
     let dy = 0;
+    let frameCount = 0; // Счётчик кадров
+    let isPaused = false;
 
-    drawMaze(x, y);
+    drawMaze(60, 4);
 
     function drawMaze(startX, startY) {
         canvas.width = mazeImg.width;
@@ -60,6 +62,7 @@ function startGame(canvas, mazeImg, heroImg) {
 
     function processKey(e) {
         e.preventDefault();
+        isPaused = false;
         const keyActions = {
             37: () => (dx = -1, dy = 0), // Влево
             38: () => (dx = 0, dy = -1), // Вверх
@@ -75,21 +78,29 @@ function startGame(canvas, mazeImg, heroImg) {
 
     window.onkeydown = processKey;
 
+    function paused() {
+        isPaused = true;
+    }
+
+    window.onkeyup = paused;
+
     function drawFrame() {
+        frameCount++;
         if (dx !== 0 || dy !== 0) {
-            context.beginPath();
-            context.fillStyle = config.heroColor;
-            context.fillRect(x, y, config.heroSize, config.heroSize);
-            x += dx;
-            y += dy;
-            if (checkForCollision()) {
-                x -= dx;
-                y -= dy;
-                dx = 0;
-                dy = 0;
+            if (frameCount % config.frameDelay === 0) {
+                context.fillStyle = config.heroColor;
+                context.fillRect(x, y, config.heroSize, config.heroSize);
+                x += dx;
+                y += dy;
+                if (checkForCollision()) {
+                    x -= dx;
+                    y -= dy;
+                    dx = 0;
+                    dy = 0;
+                }
+                drawHero();
             }
-            drawHero();
-            if (y > config.finishLine) {
+            if (y > mazeImg.height) {
                 alert('Ты победил!');
                 return;
             }
@@ -100,10 +111,22 @@ function startGame(canvas, mazeImg, heroImg) {
     function checkForCollision() {
         const startX = Math.max(0, x - 1);
         const startY = Math.max(0, y - 1);
-        const endX = Math.min(canvas.width, x + config.heroSize + 2);
-        const endY = Math.min(canvas.height, y + config.heroSize + 2);
+        const endX = Math.min(canvas.width, x + config.heroSize);
+        const endY = Math.min(canvas.height, y + config.heroSize);
         const width = endX - startX;
         const height = endY - startY;
+
+        if (isPaused) {
+            return true;
+        }
+
+        if (y <= 2) {
+            return true;
+        }
+
+        if (y >= canvas.height - config.heroSize) {
+            return true;
+        }
 
         if (width <= 0 || height <= 0) {
             return false;
@@ -118,12 +141,10 @@ function startGame(canvas, mazeImg, heroImg) {
 
             for (const color of config.wallColors) {
                 if (red === color.r && green === color.g && blue === color.b) {
-                    console.log('столкновение')
                     return true;
                 }
             }
         }
-        console.log('едем дальше')
         return false;
     }
 };

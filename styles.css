@@ -1,11 +1,7 @@
-.maze__main {
-    margin-top: 60px;
-}
-
-.maze__hero {
+#hero {
     display: none;
 }
 
-.maze__img {
+#maze {
     display: none;
 }
